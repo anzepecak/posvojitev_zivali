@@ -1,6 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { UsersModule } from './users/users.module';
+import { AnimalsModule } from './animals/animals.module';
+import { AdoptionApplicationsModule } from './adoption-applications/adoption-applications.module';
+import { FilesModule } from './files/files.module';
 
 @Module({
   imports: [
@@ -19,6 +23,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         synchronize: true, // razvoj OK; kasneje (deploy) izklopiš in migracije
       }),
     }),
+
+    UsersModule,
+
+    AnimalsModule,
+
+    AdoptionApplicationsModule,
+
+    FilesModule,
   ],
 })
 export class AppModule {}
