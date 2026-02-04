@@ -5,6 +5,8 @@ import { UsersModule } from './users/users.module';
 import { AnimalsModule } from './animals/animals.module';
 import { AdoptionApplicationsModule } from './adoption-applications/adoption-applications.module';
 import { FilesModule } from './files/files.module';
+import { AuthModule } from './auth/auth.module';
+
 
 @Module({
   imports: [
@@ -17,7 +19,7 @@ import { FilesModule } from './files/files.module';
         host: cfg.get<string>('DB_HOST'),
         port: Number(cfg.get<string>('DB_PORT')),
         username: cfg.get<string>('DB_USER'),
-        password: cfg.get<string>('DB_PASSWORD'),
+        password: cfg.get<string>('DB_PASS'),
         database: cfg.get<string>('DB_NAME'),
         autoLoadEntities: true,
         synchronize: true, // razvoj OK; kasneje (deploy) izklopiš in migracije
@@ -31,6 +33,8 @@ import { FilesModule } from './files/files.module';
     AdoptionApplicationsModule,
 
     FilesModule,
+
+    AuthModule,
   ],
 })
 export class AppModule {}
