@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import {
   AdoptionApplication,
   AdoptionStatus,
@@ -31,9 +31,7 @@ export class AdoptionApplicationsService {
     const adopted = animal.applications?.some(
       (a) => a.status === AdoptionStatus.POSVOJENO,
     );
-    if (adopted) {
-      throw new BadRequestException('Animal already adopted');
-    }
+    if (adopted) throw new BadRequestException('Animal already adopted');
 
     const existing = await this.repo.findOne({
       where: {
@@ -65,13 +63,14 @@ export class AdoptionApplicationsService {
     });
   }
 
-  async findForAnimal(animalId: number, ownerId: number) {
+  async findForAnimal(animalId: number, requesterId: number, isAdmin: boolean) {
     const animal = await this.animalsRepo.findOne({
       where: { id: animalId },
       relations: { owner: true },
     });
     if (!animal) throw new NotFoundException('Animal not found');
-    if (animal.owner?.id !== ownerId) {
+
+    if (!isAdmin && animal.owner?.id !== requesterId) {
       throw new ForbiddenException('Not your animal');
     }
 
@@ -82,13 +81,19 @@ export class AdoptionApplicationsService {
     });
   }
 
-  async updateStatus(appId: number, status: AdoptionStatus, ownerId: number) {
+  async updateStatus(
+    id: number,
+    status: AdoptionStatus,
+    requesterId: number,
+    isAdmin: boolean,
+  ) {
     const app = await this.repo.findOne({
-      where: { id: appId },
-      relations: { animal: { owner: true }, user: true },
+      where: { id },
+      relations: { animal: { owner: true } } as any,
     });
     if (!app) throw new NotFoundException('Application not found');
-    if (app.animal?.owner?.id !== ownerId) {
+
+    if (!isAdmin && app.animal?.owner?.id !== requesterId) {
       throw new ForbiddenException('Not your animal');
     }
 
@@ -102,6 +107,7 @@ export class AdoptionApplicationsService {
 
     if (!valid) throw new BadRequestException('Invalid status transition');
 
+    // ✅ prevent adopting twice
     if (status === AdoptionStatus.POSVOJENO) {
       const already = await this.repo.findOne({
         where: {
@@ -111,8 +117,21 @@ export class AdoptionApplicationsService {
       });
       if (already) throw new BadRequestException('Animal already adopted');
     }
-
     app.status = status;
-    return this.repo.save(app);
+    const saved = await this.repo.save(app);
+
+    if (status === AdoptionStatus.POSVOJENO) {
+      await this.repo.update(
+        {
+          animal: { id: app.animal.id } as any,
+          id: Not(id),
+        },
+        {
+          status: AdoptionStatus.ZAVRNJENO,
+        },
+      );
+    }
+
+    return saved;
   }
 }

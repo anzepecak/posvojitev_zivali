@@ -16,15 +16,14 @@ export class AnimalsService {
     private readonly repo: Repository<Animal>,
   ) {}
 
-  findAll() {
-    // Public list: owner + images (da lahko frontend prikaže slike)
-    return this.repo.find({
-      relations: {
-        owner: true,
-        images: true,
-      },
-      order: { id: 'DESC' },
+  async findAll() {
+    const animals = await this.repo.find({
+      relations: ['applications'],
     });
+
+    return animals.filter(
+      (a) => !a.applications?.some((app) => app.status === 'POSVOJENO'),
+    );
   }
 
   async findOne(id: number) {

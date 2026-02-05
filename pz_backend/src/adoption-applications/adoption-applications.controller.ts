@@ -32,7 +32,8 @@ export class AdoptionApplicationsController {
   @UseGuards(JwtAuthGuard)
   @Get('animal/:animalId')
   forAnimal(@Param('animalId') animalId: string, @CurrentUser() user: any) {
-    return this.apps.findForAnimal(+animalId, user.id);
+    const isAdmin = user?.role === 'ADMIN';
+    return this.apps.findForAnimal(+animalId, user.id, isAdmin);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -42,6 +43,7 @@ export class AdoptionApplicationsController {
     @Body() dto: UpdateAdoptionStatusDto,
     @CurrentUser() user: any,
   ) {
-    return this.apps.updateStatus(+id, dto.status, user.id);
+    const isAdmin = user?.role === 'ADMIN';
+    return this.apps.updateStatus(+id, dto.status, user.id, isAdmin);
   }
 }

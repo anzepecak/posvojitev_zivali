@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Controller,
   Get,
+  Param,
   Post,
   UploadedFile,
   UseGuards,
@@ -36,6 +37,9 @@ export class FilesController {
     return { ok: true };
   }
 
+  // =========================
+  // USER AVATAR
+  // =========================
   @UseGuards(JwtAuthGuard)
   @Post('avatar')
   @UseInterceptors(
@@ -60,5 +64,39 @@ export class FilesController {
       mimeType: file.mimetype,
       size: file.size,
     });
+  }
+
+  // =========================
+  // ANIMAL IMAGE UPLOAD
+  // =========================
+  @UseGuards(JwtAuthGuard)
+  @Post('animal/:animalId')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads/animals',
+        filename: makeFilename,
+      }),
+      fileFilter: imageFileFilter,
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  async uploadAnimalImage(
+    @Param('animalId') animalId: string,
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: any,
+  ) {
+    const id = Number(animalId);
+    if (!Number.isFinite(id)) throw new BadRequestException('Invalid animalId');
+    if (!file) throw new BadRequestException('No file provided');
+
+    return this.files.saveAnimalImage({
+      animalId: id,
+      ownerId: user.id,
+      filename: file.filename,
+      mimeType: file.mimetype,
+      size: file.size,
+    });
+
   }
 }
