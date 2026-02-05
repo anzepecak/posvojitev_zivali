@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { http } from '../api/http';
 import { useAuth } from '../auth/AuthContext';
@@ -42,7 +42,7 @@ export default function AnimalDetailsPage() {
     try {
       await uploadAnimalImage(Number(id), file);
       setUploadOk('Uploaded ✅');
-      await load(); // reload da dobiš novo sliko v animal.images
+      await load();
     } catch (e2) {
       setUploadErr(
         e2?.response?.data?.message ??
@@ -50,105 +50,199 @@ export default function AnimalDetailsPage() {
       );
     } finally {
       setUploading(false);
-      e.target.value = ''; // reset input
+      e.target.value = '';
     }
   }
 
+  const isAdmin = user?.role === 'ADMIN';
+  const canUpload = isLoggedIn && isAdmin;
+
+  const images = animal?.images ?? [];
+  const heroImg = useMemo(() => {
+    if (!images || images.length === 0) return '';
+    return fileUrl(images[0]);
+  }, [images]);
+
   if (err) {
     return (
-      <div
-        style={{
-          maxWidth: 900,
-          margin: '30px auto',
-          padding: 12,
-          color: 'crimson',
-        }}
-      >
-        {err}
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
+        <div className="text-sm font-semibold">Error</div>
+        <div className="mt-1">{err}</div>
       </div>
     );
   }
 
   if (!animal) {
     return (
-      <div style={{ maxWidth: 900, margin: '30px auto', padding: 12 }}>
-        Loading...
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-600">
+        Loading…
       </div>
     );
   }
 
-  const isAdmin = user?.role === 'ADMIN';
-  const canUpload = isLoggedIn && isAdmin; // za začetek samo admin (lahko razširimo)
-
   return (
-    <div style={{ maxWidth: 900, margin: '30px auto', padding: 12 }}>
-      <h2>{animal.name}</h2>
-      <div style={{ opacity: 0.8 }}>
-        {animal.species} • {animal.age} years
+    <div className="space-y-6">
+      {/* Top actions */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link
+          to="/"
+          className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+        >
+          ← Back
+        </Link>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {isLoggedIn && (
+            <Link
+              to={`/apply/${animal.id}`}
+              className="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+            >
+              Apply for adoption
+            </Link>
+          )}
+
+          {isLoggedIn && isAdmin && (
+            <Link
+              to={`/admin/animals/${animal.id}/applications`}
+              className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+            >
+              Admin: applications
+            </Link>
+          )}
+        </div>
       </div>
 
-      {animal.description && <p>{animal.description}</p>}
-
-      {/* GALERIJA */}
-      <h3>Images</h3>
-      {(!animal.images || animal.images.length === 0) && (
-        <div style={{ opacity: 0.7 }}>No images yet.</div>
-      )}
-
-      {animal.images && animal.images.length > 0 && (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 10,
-          }}
-        >
-          {animal.images.map((img) => (
-            <a
-              key={img.id}
-              href={fileUrl(img)}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <img
-                src={fileUrl(img)}
-                alt={img.filename ?? 'animal'}
-                style={{
-                  width: '100%',
-                  height: 180,
-                  objectFit: 'cover',
-                  borderRadius: 12,
-                }}
-              />
-            </a>
-          ))}
+      {/* Hero + Info */}
+      <div className="grid gap-6 lg:grid-cols-5">
+        {/* Hero image */}
+        <div className="lg:col-span-3">
+          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div className="h-72 w-full bg-slate-100 sm:h-96">
+              {heroImg ? (
+                <img
+                  src={heroImg}
+                  alt={animal.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-sm text-slate-500">
+                  No images yet
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      )}
 
-      {/* UPLOAD */}
-      {canUpload && (
-        <div style={{ marginTop: 14, display: 'grid', gap: 8 }}>
-          <label style={{ fontWeight: 700 }}>Upload new image (Admin)</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={onUpload}
-            disabled={uploading}
-          />
-          {uploadOk && <div style={{ color: 'green' }}>{uploadOk}</div>}
-          {uploadErr && <div style={{ color: 'crimson' }}>{uploadErr}</div>}
+        {/* Info card */}
+        <div className="lg:col-span-2">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h1 className="truncate text-2xl font-extrabold tracking-tight">
+                  {animal.name}
+                </h1>
+                <p className="mt-1 text-sm text-slate-600">
+                  {animal.species} • {animal.age} years
+                </p>
+              </div>
+
+              <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
+                ID {animal.id}
+              </span>
+            </div>
+
+            {animal.description ? (
+              <p className="mt-4 text-sm leading-relaxed text-slate-700">
+                {animal.description}
+              </p>
+            ) : (
+              <p className="mt-4 text-sm text-slate-500">
+                No description provided.
+              </p>
+            )}
+
+            <div className="mt-6 grid gap-2">
+              {isLoggedIn ? (
+                <Link
+                  to={`/apply/${animal.id}`}
+                  className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800"
+                >
+                  Apply for adoption
+                </Link>
+              ) : (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                  Log in to apply for adoption.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Admin upload */}
+          {canUpload && (
+            <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="text-sm font-extrabold text-slate-900">
+                Upload new image (Admin)
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                Add images to improve adoption chances.
+              </p>
+
+              <div className="mt-4 grid gap-3">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={onUpload}
+                  disabled={uploading}
+                  className="block w-full text-sm file:mr-3 file:rounded-xl file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-slate-800 disabled:opacity-60"
+                />
+
+                {uploadOk && (
+                  <div className="rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+                    {uploadOk}
+                  </div>
+                )}
+                {uploadErr && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    {uploadErr}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
-      <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-        <Link to="/">Back</Link>
-        {isLoggedIn && (
-          <Link to={`/apply/${animal.id}`}>Apply for adoption</Link>
-        )}
-        {isLoggedIn && isAdmin && (
-          <Link to={`/admin/animals/${animal.id}/applications`}>
-            Admin: view applications
-          </Link>
+      {/* Gallery */}
+      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-extrabold">Images</h2>
+          <div className="text-sm text-slate-500">{images.length} total</div>
+        </div>
+
+        {images.length === 0 ? (
+          <div className="mt-3 text-sm text-slate-600">No images yet.</div>
+        ) : (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {images.map((img) => {
+              const url = fileUrl(img);
+              return (
+                <a
+                  key={img.id}
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group overflow-hidden rounded-2xl border border-slate-200 bg-slate-50"
+                >
+                  <img
+                    src={url}
+                    alt={img.filename ?? 'animal'}
+                    className="h-44 w-full object-cover transition duration-200 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                </a>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>

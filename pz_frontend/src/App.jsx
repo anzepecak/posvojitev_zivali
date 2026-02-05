@@ -10,75 +10,123 @@ import MyApplicationsPage from './pages/MyApplicationsPage';
 import AdminAnimalApplicationsPage from './pages/AdminAnimalApplicationsPage';
 import RequireAuth from './auth/RequireAuth';
 import RegisterPage from './pages/RegisterPage';
-
+import CreateAnimalPage from './pages/CreateAnimalPage';
 
 export default function App() {
   const { isLoggedIn, user, logout } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
 
   return (
-    <div>
-      <header
-        style={{
-          display: 'flex',
-          gap: 12,
-          padding: 12,
-          borderBottom: '1px solid #eee',
-        }}
-      >
-        <Link to="/" style={{ fontWeight: 800 }}>
-          PZ Adoption
-        </Link>
-        <Link to="/">Animals</Link>
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      {/* NAVBAR */}
+      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3">
+          {/* LOGO */}
+          <Link to="/" className="text-lg font-extrabold tracking-tight">
+            PZ Adoption
+          </Link>
 
-        {isLoggedIn && <Link to="/my-applications">My applications</Link>}
+          {/* NAV LINKS */}
+          <nav className="flex items-center gap-3 text-sm">
+            <Link
+              to="/"
+              className="rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+            >
+              Animals
+            </Link>
 
-        {isLoggedIn && isAdmin && (
-          <span style={{ opacity: 0.7 }}>(Admin enabled)</span>
-        )}
+            {isLoggedIn && (
+              <Link
+                to="/my-applications"
+                className="rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+              >
+                My applications
+              </Link>
+            )}
 
-        <div style={{ marginLeft: 'auto' }}>
-          {isLoggedIn ? (
-            <button onClick={logout}>Logout</button>
-          ) : (
-            <Link to="/login">Login</Link>
-          )}
+            {/* ✅ ADD ANIMAL (ADMIN ONLY) */}
+            {isLoggedIn && isAdmin && (
+              <Link
+                to="/admin/create-animal"
+                className="rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+              >
+                Add animal
+              </Link>
+            )}
+
+            {isLoggedIn && isAdmin && (
+              <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
+                Admin enabled
+              </span>
+            )}
+          </nav>
+
+          {/* LOGIN / LOGOUT */}
+          <div className="ml-auto">
+            {isLoggedIn ? (
+              <button
+                onClick={logout}
+                className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+              >
+                Logout
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+              >
+                Login
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 
-      <Routes>
-        <Route path="/" element={<AnimalsPage />} />
-        <Route path="/animals/:id" element={<AnimalDetailsPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+      {/* PAGE CONTAINER */}
+      <main className="mx-auto max-w-6xl px-4 py-8">
+        <Routes>
+          <Route
+            path="/admin/create-animal"
+            element={
+              <RequireAuth>
+                <CreateAnimalPage />
+              </RequireAuth>
+            }
+          />
 
-        <Route
-          path="/apply/:animalId"
-          element={
-            <RequireAuth>
-              <ApplyPage />
-            </RequireAuth>
-          }
-        />
+          <Route path="/" element={<AnimalsPage />} />
+          <Route path="/animals/:id" element={<AnimalDetailsPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
 
-        <Route
-          path="/my-applications"
-          element={
-            <RequireAuth>
-              <MyApplicationsPage />
-            </RequireAuth>
-          }
-        />
+          <Route
+            path="/apply/:animalId"
+            element={
+              <RequireAuth>
+                <ApplyPage />
+              </RequireAuth>
+            }
+          />
 
-        <Route
-          path="/admin/animals/:animalId/applications"
-          element={
-            <RequireAuth>
-              <AdminAnimalApplicationsPage />
-            </RequireAuth>
-          }
-        />
-      </Routes>
+          <Route
+            path="/my-applications"
+            element={
+              <RequireAuth>
+                <MyApplicationsPage />
+              </RequireAuth>
+            }
+          />
+
+          <Route
+            path="/admin/animals/:animalId/applications"
+            element={
+              <RequireAuth>
+                <AdminAnimalApplicationsPage />
+              </RequireAuth>
+            }
+          />
+        </Routes>
+      </main>
     </div>
   );
 }
