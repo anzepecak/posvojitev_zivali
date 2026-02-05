@@ -4,8 +4,10 @@ import {
   Column,
   OneToOne,
   JoinColumn,
+  ManyToOne,
 } from 'typeorm';
 import { User } from '../users/user.entity';
+import { Animal } from '../animals/animal.entity';
 
 @Entity('files')
 export class File {
@@ -24,7 +26,18 @@ export class File {
   @Column({ type: 'int', nullable: true })
   size: number;
 
-  @OneToOne(() => User, (u) => u.avatar, { onDelete: 'CASCADE' })
+  // avatar uporabnika (1:1)
+  @OneToOne(() => User, (u) => u.avatar, {
+    onDelete: 'CASCADE',
+    nullable: true,
+  })
   @JoinColumn()
-  user: User;
+  user?: User;
+
+  // slike živali (N:1)
+  @ManyToOne(() => Animal, (a) => a.images, {
+    onDelete: 'CASCADE',
+    nullable: true,
+  })
+  animal?: Animal;
 }

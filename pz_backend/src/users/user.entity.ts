@@ -6,12 +6,12 @@ import {
   OneToOne,
 } from 'typeorm';
 import { Animal } from '../animals/animal.entity';
-import { AdoptionApplication } from '../adoption-applications/adoption-application.entity';
 import { File } from '../files/file.entity';
+import { AdoptionApplication } from '../adoption-applications/adoption-application.entity';
 
 export enum UserRole {
   USER = 'USER',
-  SHELTER = 'SHELTER',
+  ADMIN = 'ADMIN',
 }
 
 @Entity('users')
@@ -25,15 +25,18 @@ export class User {
   @Column()
   passwordHash: string;
 
+  @Column({default: '' })
+  name: string;
+
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
   role: UserRole;
 
   @OneToMany(() => Animal, (a) => a.owner)
   animals: Animal[];
 
-  @OneToMany(() => AdoptionApplication, (app) => app.applicant)
-  applications: AdoptionApplication[];
+  @OneToOne(() => File, (f) => f.user, { nullable: true })
+  avatar?: File;
 
-  @OneToOne(() => File, (f) => f.user)
-  avatar: File;
+  @OneToMany(() => AdoptionApplication, (app) => app.user)
+  applications: AdoptionApplication[];
 }

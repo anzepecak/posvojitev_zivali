@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { User } from '../users/user.entity';
 import { AdoptionApplication } from '../adoption-applications/adoption-application.entity';
+import { File } from '../files/file.entity';
 
 @Entity('animals')
 export class Animal {
@@ -30,4 +31,7 @@ export class Animal {
 
   @OneToMany(() => AdoptionApplication, (app) => app.animal)
   applications: AdoptionApplication[];
+
+  @OneToMany(() => File, (f) => f.animal)
+  images: File[];
 }

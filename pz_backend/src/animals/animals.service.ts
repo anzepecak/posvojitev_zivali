@@ -17,12 +17,28 @@ export class AnimalsService {
   ) {}
 
   findAll() {
-    // vrne vse živali; owner/applications se ne eager-loadajo, razen če si nastavil eager drugje
-    return this.repo.find({ relations: { owner: true } });
+    // Public list: owner + images (da lahko frontend prikaže slike)
+    return this.repo.find({
+      relations: {
+        owner: true,
+        images: true,
+      },
+      order: { id: 'DESC' },
+    });
   }
 
-  findOne(id: number) {
-    return this.repo.findOne({ where: { id }, relations: { owner: true } });
+  async findOne(id: number) {
+    const animal = await this.repo.findOne({
+      where: { id },
+      relations: {
+        owner: true,
+        images: true,
+        applications: true,
+      },
+    });
+
+    if (!animal) throw new NotFoundException('Animal not found');
+    return animal;
   }
 
   create(dto: CreateAnimalDto, userId: number) {
@@ -52,7 +68,10 @@ export class AnimalsService {
   async remove(id: number, userId: number) {
     const animal = await this.repo.findOne({
       where: { id },
-      relations: { owner: true },
+      relations: {
+        owner: true,
+        images: true,
+      },
     });
     if (!animal) throw new NotFoundException('Animal not found');
 
